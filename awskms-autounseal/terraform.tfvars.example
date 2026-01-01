@@ -1,0 +1,27 @@
+# AWS Region
+aws_region = "us-east-1"
+
+# Cluster name prefix
+cluster_name = "vaultlab"
+
+# Vault Enterprise version (must include +ent suffix)
+# Examples: "1.15.4+ent", "1.14.8+ent", "1.13.12+ent"
+vault_version = "1.15.4+ent"
+
+# Vault Enterprise License (required)
+# Get your license from your HashiCorp account or license file
+vault_license = "your-vault-enterprise-license-here"
+
+# EC2 Instance type (t3.micro is cheapest)
+instance_type = "t3.micro"
+
+# VPC CIDR block
+vpc_cidr = "10.0.0.0/16"
+
+# CIDR blocks allowed for SSH access
+# For security, restrict to your IP: ["YOUR_IP/32"]
+allowed_ssh_cidrs = ["0.0.0.0/0"]
+
+# CIDR blocks allowed for Vault API access
+# For security, restrict to your IP: ["YOUR_IP/32"]
+allowed_vault_cidrs = ["0.0.0.0/0"]
