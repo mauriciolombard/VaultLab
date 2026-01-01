@@ -26,7 +26,7 @@ export AWS_SECRET_ACCESS_KEY=...
 export AWS_SESSION_TOKEN=...
 ```
 
-### 2. Create terraform.tfvars (Likely this step is required only the first time running through the lab)
+### 2. Make sure to have your terraform.tfvars
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
