@@ -26,7 +26,7 @@ export AWS_SECRET_ACCESS_KEY=...
 export AWS_SESSION_TOKEN=...
 ```
 
-### 2. Create terraform.tfvars
+### 2. Create terraform.tfvars (Likely this step is required only the first time running through the lab)
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
@@ -41,13 +41,12 @@ Edit `terraform.tfvars` and set:
 
 ```bash
 terraform init
-terraform plan
-terraform apply
+terraform apply -auto-approve
 ```
 
 ### 4. Initialize Vault
 
-After deployment, initialize the cluster using the provided script:
+After deployment, initialize the cluster using the provided script. Make sure Vault CLI is installed https://developer.hashicorp.com/vault/tutorials/get-started/install-binary#vault-enterprise
 
 ```bash
 ./init.sh
@@ -60,9 +59,9 @@ This script will:
 
 **Important:** Save the contents of `vault-init-keys.json` securely - it contains your recovery keys and initial root token.
 
-### 5. Set VAULT_ADDR to NLB
+### 5. Once the cluster is initialized and healthy - export the generated VAULT_ADDR and VAULT_TOKEN
 
-Once the cluster is initialized and healthy:
+Alternatively:
 
 ```bash
 # Get the export command from outputs
@@ -77,6 +76,24 @@ vault status
 
 ## Accessing Individual Nodes
 
+To get the SSH commands for each node:
+
+```bash
+terraform output ssh_connection_commands
+```
+
+Or get the instance IPs:
+
+```bash
+terraform output vault_instance_ips
+```
+
+eneral SSH command format is:
+```bash
+ssh -i vault-key.pem ec2-user@<PUBLIC_IP>
+```
+
+
 ### Vault Config File Locations
 
 On each node, the Vault configuration file is located at:
@@ -89,28 +106,9 @@ The license file is at:
 /etc/vault.d/vault.hclic
 ```
 
-### SSH to Nodes
-
-Run this to get the SSH commands for each node:
-
-```bash
-terraform output ssh_connection_commands
-```
-
-Or get the instance IPs:
-
-```bash
-terraform output vault_instance_ips
-```
-
-The general SSH command format is:
-```bash
-ssh -i vault-key.pem ec2-user@<PUBLIC_IP>
-```
-
 ### Common Node Operations
 
-Once connected to a node, you can:
+Once connected to a node:
 
 ```bash
 # View the config
@@ -132,7 +130,7 @@ If you are debugging Vault issues, you will often see `--no-pager` combined with
   - Example: `journalctl -u vault -n 50 --no-pager`
 - `-f`: "Follow" mode (like `tail -f`). This actually ignores `--no-pager` because it is inherently interactive, streaming new logs as they arrive
 
-## Upgrade Vault
+## To Upgrade Vault
 
 On each Vault node:
 
@@ -163,26 +161,3 @@ terraform destroy -auto-approve
 - VPC and all networking components
 - Security groups
 - The local `vault-key.pem` SSH key will remain (delete manually if needed)
-
-
-## Useful Terraform Commands
-
-```bash
-# View current state of resources
-terraform show
-
-# List all resources in state
-terraform state list
-
-# Refresh state to match actual AWS resources
-terraform refresh
-
-# View all outputs
-terraform output
-
-# Format Terraform files
-terraform fmt
-
-# Validate configuration
-terraform validate
-```
