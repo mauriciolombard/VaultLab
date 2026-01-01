@@ -88,7 +88,7 @@ Or get the instance IPs:
 terraform output vault_instance_ips
 ```
 
-eneral SSH command format is:
+General SSH command format is:
 ```bash
 ssh -i vault-key.pem ec2-user@<PUBLIC_IP>
 ```
@@ -96,12 +96,12 @@ ssh -i vault-key.pem ec2-user@<PUBLIC_IP>
 
 ### Vault Config File Locations
 
-On each node, the Vault configuration file is located at:
+On each node, configuration file at:
 ```
 /etc/vault.d/vault.hcl
 ```
 
-The license file is at:
+License file is at:
 ```
 /etc/vault.d/vault.hclic
 ```
