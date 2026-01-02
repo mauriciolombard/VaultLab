@@ -130,7 +130,7 @@ If you are debugging Vault issues, you will often see `--no-pager` combined with
   - Example: `journalctl -u vault -n 50 --no-pager`
 - `-f`: "Follow" mode (like `tail -f`). This actually ignores `--no-pager` because it is inherently interactive, streaming new logs as they arrive
 
-## To Upgrade Vault
+## To test Vault Upgrades
 
 On each Vault node:
 
