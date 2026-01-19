@@ -1,0 +1,72 @@
+# Test pod for Vault Agent Injector
+# This pod uses annotations to have secrets automatically injected
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod-injector
+  namespace: vault-test
+  labels:
+    app: test-vault-auth
+    method: injector
+  annotations:
+    # Enable Vault Agent injection
+    vault.hashicorp.com/agent-inject: "true"
+
+    # Specify the Vault role to authenticate with
+    vault.hashicorp.com/role: "test-role"
+
+    # Inject the secret at secret/myapp/config to /vault/secrets/config.txt
+    vault.hashicorp.com/agent-inject-secret-config.txt: "secret/data/myapp/config"
+
+    # Custom template for the secret (optional)
+    # This formats the secret as key=value pairs
+    vault.hashicorp.com/agent-inject-template-config.txt: |
+      {{- with secret "secret/data/myapp/config" -}}
+      # Vault Injected Secrets
+      USERNAME={{ .Data.data.username }}
+      PASSWORD={{ .Data.data.password }}
+      API_KEY={{ .Data.data.api_key }}
+      {{- end }}
+
+    # Keep the agent running to refresh secrets (optional)
+    vault.hashicorp.com/agent-pre-populate-only: "false"
+
+    # Log level for debugging
+    vault.hashicorp.com/log-level: "info"
+
+spec:
+  serviceAccountName: vault-sa
+
+  containers:
+  - name: app
+    image: alpine:latest
+    command:
+      - "sh"
+      - "-c"
+      - |
+        echo "Application starting..."
+        echo "Waiting for secrets to be injected..."
+        sleep 10
+        echo ""
+        echo "Checking for injected secrets:"
+        if [ -f /vault/secrets/config.txt ]; then
+          echo "SUCCESS: Secrets found at /vault/secrets/config.txt"
+          echo "---"
+          cat /vault/secrets/config.txt
+          echo "---"
+        else
+          echo "WAITING: Secrets not yet available"
+        fi
+        echo ""
+        echo "Sleeping forever (use kubectl exec to inspect)..."
+        sleep infinity
+
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "64Mi"
+        cpu: "50m"
+
+  restartPolicy: Never

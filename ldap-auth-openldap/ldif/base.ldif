@@ -1,0 +1,27 @@
+# Base LDIF for VaultLab OpenLDAP
+# This file is for reference - the user-data script creates this structure automatically
+# To use manually: ldapadd -x -D "cn=admin,dc=vaultlab,dc=local" -W -f base.ldif
+
+# Base domain entry
+dn: dc=vaultlab,dc=local
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: VaultLab
+dc: vaultlab
+
+# Admin entry
+dn: cn=admin,dc=vaultlab,dc=local
+objectClass: organizationalRole
+cn: admin
+description: LDAP Administrator
+
+# Users organizational unit
+dn: ou=users,dc=vaultlab,dc=local
+objectClass: organizationalUnit
+ou: users
+
+# Groups organizational unit
+dn: ou=groups,dc=vaultlab,dc=local
+objectClass: organizationalUnit
+ou: groups

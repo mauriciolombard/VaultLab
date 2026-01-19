@@ -1,0 +1,78 @@
+# Test Users and Groups LDIF for VaultLab OpenLDAP
+# This file is for reference - the user-data script creates these automatically
+# To use manually: ldapadd -x -D "cn=admin,dc=vaultlab,dc=local" -W -f test-users.ldif
+
+# =============================================================================
+# USERS
+# =============================================================================
+
+# User: alice - Vault Administrator
+# Login: alice / password123
+dn: uid=alice,ou=users,dc=vaultlab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Alice Admin
+sn: Admin
+uid: alice
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/alice
+loginShell: /bin/bash
+userPassword: {SSHA}password_hash_here
+mail: alice@vaultlab.local
+
+# User: bob - Regular Vault User
+# Login: bob / password123
+dn: uid=bob,ou=users,dc=vaultlab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Bob User
+sn: User
+uid: bob
+uidNumber: 1002
+gidNumber: 1002
+homeDirectory: /home/bob
+loginShell: /bin/bash
+userPassword: {SSHA}password_hash_here
+mail: bob@vaultlab.local
+
+# User: charlie - Regular Vault User
+# Login: charlie / password123
+dn: uid=charlie,ou=users,dc=vaultlab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Charlie User
+sn: User
+uid: charlie
+uidNumber: 1003
+gidNumber: 1003
+homeDirectory: /home/charlie
+loginShell: /bin/bash
+userPassword: {SSHA}password_hash_here
+mail: charlie@vaultlab.local
+
+# =============================================================================
+# GROUPS
+# =============================================================================
+
+# Group: vault-admins
+# Members: alice
+# Vault Policy: ldap-admins (full access)
+dn: cn=vault-admins,ou=groups,dc=vaultlab,dc=local
+objectClass: groupOfNames
+cn: vault-admins
+description: Vault Administrators - maps to ldap-admins policy
+member: uid=alice,ou=users,dc=vaultlab,dc=local
+
+# Group: vault-users
+# Members: bob, charlie
+# Vault Policy: ldap-users (read-only access)
+dn: cn=vault-users,ou=groups,dc=vaultlab,dc=local
+objectClass: groupOfNames
+cn: vault-users
+description: Vault Users - maps to ldap-users policy
+member: uid=bob,ou=users,dc=vaultlab,dc=local
+member: uid=charlie,ou=users,dc=vaultlab,dc=local

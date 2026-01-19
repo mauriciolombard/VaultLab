@@ -1,0 +1,34 @@
+# Copy this file to terraform.tfvars and fill in the values
+
+# AWS Configuration
+aws_region   = "us-east-1"
+cluster_name = "vaultlab"
+
+# VPC Configuration (get these from awskms-autounseal outputs)
+vpc_id    = "vpc-xxxxxxxxx"
+subnet_id = ""  # Optional - uses first available subnet if empty
+
+# Vault Configuration (get these from awskms-autounseal outputs)
+vault_addr  = "http://your-nlb-dns:8200"
+vault_token = "hvs.xxxxx"  # Root token or admin token
+
+# Instance Configuration (t3.medium minimum for AD)
+instance_type    = "t3.medium"
+root_volume_size = 50
+
+# Access Control
+allowed_rdp_cidrs  = ["0.0.0.0/0"]  # Restrict in production
+allowed_ldap_cidrs = []              # Empty = VPC CIDR only
+
+# Active Directory Configuration
+ad_domain_name        = "vaultlab.local"
+ad_netbios_name       = "VAULTLAB"
+ad_safe_mode_password = "SafeMode123!"
+
+# Credentials
+windows_admin_password = ""            # Leave empty to auto-generate
+ad_admin_password      = "VaultBind123!"  # Service account for Vault
+ad_test_user_password  = "Password123!"   # Test users (alice, bob, charlie)
+
+# Vault LDAP Auth
+configure_vault_ldap = true

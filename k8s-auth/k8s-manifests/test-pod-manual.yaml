@@ -1,0 +1,58 @@
+# Test pod for manual Vault authentication
+# This pod includes the Vault CLI for interactive testing
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod-manual
+  namespace: vault-test
+  labels:
+    app: test-vault-auth
+    method: manual
+spec:
+  serviceAccountName: vault-sa
+
+  containers:
+  - name: vault-cli
+    image: hashicorp/vault:latest
+    command:
+      - "sh"
+      - "-c"
+      - "sleep infinity"
+
+    env:
+    - name: VAULT_ADDR
+      value: "${VAULT_ADDR}"
+
+    # Mount the service account token
+    volumeMounts:
+    - name: vault-token
+      mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+
+  volumes:
+  - name: vault-token
+    projected:
+      sources:
+      - serviceAccountToken:
+          path: token
+          expirationSeconds: 7200
+      - configMap:
+          name: kube-root-ca.crt
+          items:
+          - key: ca.crt
+            path: ca.crt
+      - downwardAPI:
+          items:
+          - path: namespace
+            fieldRef:
+              fieldPath: metadata.namespace
+
+  restartPolicy: Never

@@ -1,0 +1,8 @@
+# Namespace for Vault test resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vault-test
+  labels:
+    app: vault-test
+    purpose: testing
