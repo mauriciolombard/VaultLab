@@ -297,6 +297,107 @@ curl -k https://<ngrok-url>/healthz
 # Check from Vault server logs (if accessible)
 ```
 
+---
+
+## Kubernetes CLI Quick Reference
+
+Common kubectl commands for troubleshooting and learning.
+
+### Pod Lifecycle
+
+```bash
+# Recreate a pod (pick up config/secret changes)
+kubectl delete pod <pod-name> -n <namespace>
+kubectl apply -f <manifest.yaml>
+
+# View pod startup logs
+kubectl logs <pod-name> -n <namespace>
+
+# Follow logs in real-time
+kubectl logs -f <pod-name> -n <namespace>
+
+# Logs from specific container (multi-container pods)
+kubectl logs <pod-name> -n <namespace> -c <container-name>
+
+# Previous container logs (after crash)
+kubectl logs <pod-name> -n <namespace> --previous
+```
+
+### Inspecting Resources
+
+```bash
+# Get resource status
+kubectl get pods -n <namespace>
+kubectl get secrets -n <namespace>
+kubectl get events -n <namespace> --sort-by='.lastTimestamp'
+
+# Detailed resource info
+kubectl describe pod <pod-name> -n <namespace>
+kubectl describe secret <secret-name> -n <namespace>
+
+# Full YAML output
+kubectl get pod <pod-name> -n <namespace> -o yaml
+```
+
+### Secrets
+
+```bash
+# List secret keys
+kubectl get secret <secret-name> -n <namespace> -o jsonpath='{.data}' | jq 'keys'
+
+# Decode a secret value
+kubectl get secret <secret-name> -n <namespace> -o jsonpath='{.data.<key>}' | base64 -d
+
+# View all decoded values
+kubectl get secret <secret-name> -n <namespace> -o json | jq '.data | map_values(@base64d)'
+```
+
+### Exec & Debug
+
+```bash
+# Run command in pod
+kubectl exec <pod-name> -n <namespace> -- <command>
+
+# Interactive shell
+kubectl exec -it <pod-name> -n <namespace> -- /bin/sh
+
+# Check environment variables
+kubectl exec <pod-name> -n <namespace> -- env | grep -i <pattern>
+
+# Check mounted files
+kubectl exec <pod-name> -n <namespace> -- ls -la /path/to/mount
+kubectl exec <pod-name> -n <namespace> -- cat /path/to/file
+```
+
+### Watching Resources
+
+```bash
+# Watch pods in real-time
+kubectl get pods -n <namespace> -w
+
+# Watch with timestamps
+kubectl get pods -n <namespace> -w --output-watch-events
+
+# Watch specific resource
+kubectl get secret <secret-name> -n <namespace> -w
+```
+
+### ServiceAccounts & RBAC
+
+```bash
+# List ServiceAccounts
+kubectl get serviceaccounts -n <namespace>
+
+# Check pod's ServiceAccount
+kubectl get pod <pod-name> -n <namespace> -o jsonpath='{.spec.serviceAccountName}'
+
+# View ClusterRoleBindings
+kubectl get clusterrolebindings | grep <pattern>
+kubectl describe clusterrolebinding <name>
+```
+
+---
+
 ## Reset Procedures
 
 ### Full Reset

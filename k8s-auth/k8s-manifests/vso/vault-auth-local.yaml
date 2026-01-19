@@ -1,0 +1,26 @@
+# vault-auth-local.yaml
+# VaultAuth in the vault-test namespace for local secret syncing
+# Uses the vault-sa ServiceAccount that exists in vault-test namespace
+
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: vault-test
+spec:
+  # Reference the VaultConnection from the operator namespace
+  vaultConnectionRef: vault-secrets-operator/vault-connection
+
+  # Kubernetes auth method
+  method: kubernetes
+
+  # Mount path for the auth method in Vault
+  mount: kubernetes
+
+  # Kubernetes-specific auth configuration
+  kubernetes:
+    # Use the test-role which is bound to vault-sa in vault-test namespace
+    role: test-role
+
+    # ServiceAccount in vault-test namespace
+    serviceAccount: vault-sa

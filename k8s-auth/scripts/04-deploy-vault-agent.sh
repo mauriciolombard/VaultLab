@@ -58,6 +58,25 @@ echo "Creating vault namespace..."
 kubectl create namespace vault 2>/dev/null || echo "Namespace 'vault' already exists"
 echo ""
 
+# Cleanup any failed Helm releases or orphaned resources
+echo "Checking for existing Helm release..."
+RELEASE_STATUS=$(helm status vault -n vault 2>/dev/null | grep "STATUS:" | awk '{print $2}' || echo "not-found")
+if [ "$RELEASE_STATUS" = "failed" ]; then
+    echo -e "${YELLOW}⚠${NC}  Found failed Helm release, cleaning up..."
+    helm uninstall vault -n vault 2>/dev/null || true
+    echo -e "${GREEN}✓${NC} Failed release removed"
+fi
+
+# Remove orphaned MutatingWebhookConfiguration to avoid field manager conflicts
+if kubectl get mutatingwebhookconfiguration vault-agent-injector-cfg &>/dev/null; then
+    if [ "$RELEASE_STATUS" = "not-found" ] || [ "$RELEASE_STATUS" = "failed" ]; then
+        echo -e "${YELLOW}⚠${NC}  Found orphaned webhook configuration, removing..."
+        kubectl delete mutatingwebhookconfiguration vault-agent-injector-cfg 2>/dev/null || true
+        echo -e "${GREEN}✓${NC} Orphaned webhook removed"
+    fi
+fi
+echo ""
+
 # Deploy Vault Agent Injector using Helm
 # Note: The Helm chart creates its own ServiceAccount for the injector
 echo "Deploying Vault Agent Injector..."

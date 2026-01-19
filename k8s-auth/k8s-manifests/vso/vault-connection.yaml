@@ -1,0 +1,23 @@
+# vault-connection.yaml
+# Defines the connection to the external Vault cluster
+# VSO uses this to know where to fetch secrets from
+#
+# Note: ${VAULT_ADDR} is substituted by the deploy script
+# If applying manually, replace with your Vault address
+
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault-connection
+  namespace: vault-secrets-operator
+spec:
+  # Address of the Vault server
+  # This is the NLB address from the awskms-autounseal cluster
+  address: ${VAULT_ADDR}
+
+  # Skip TLS verification (lab environment only)
+  # In production, configure proper TLS with caCertSecretRef
+  skipTLSVerify: true
+
+  # Optional: Timeout for Vault requests
+  # timeout: 30s

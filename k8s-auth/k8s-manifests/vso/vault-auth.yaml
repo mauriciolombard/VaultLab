@@ -1,0 +1,37 @@
+# vault-auth.yaml
+# Configures how VSO authenticates to Vault
+# Uses Kubernetes auth method with the operator's ServiceAccount
+
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: vault-secrets-operator
+spec:
+  # Reference the VaultConnection
+  vaultConnectionRef: vault-connection
+
+  # Kubernetes auth method
+  method: kubernetes
+
+  # Mount path for the auth method in Vault
+  mount: kubernetes
+
+  # Allow this VaultAuth to be used by resources in these namespaces
+  # Required for VaultStaticSecret in vault-test to reference this auth
+  allowedNamespaces:
+    - vault-test
+
+  # Kubernetes-specific auth configuration
+  kubernetes:
+    # Role created in Vault for VSO
+    # This role (vso-role) is bound to the VSO controller's ServiceAccount
+    role: vso-role
+
+    # ServiceAccount used by VSO controller
+    # This SA is created automatically by the Helm chart
+    serviceAccount: vault-secrets-operator-controller-manager
+
+    # Optional: Specify audiences for the ServiceAccount token
+    # audiences:
+    #   - vault

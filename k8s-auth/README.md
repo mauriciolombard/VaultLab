@@ -1,4 +1,4 @@
-# Vault Kubernetes Authentication Lab
+# Kubernetes Authentication Lab
 
 This module sets up Vault Kubernetes authentication using a local Minikube cluster connected to your existing Vault cluster on AWS via an ngrok tunnel.
 
@@ -76,7 +76,7 @@ export KUBERNETES_HOST="https://<ngrok-url>"  # From step 2
 
 In the auth flow:
 1. Pod sends its ServiceAccount JWT to Vault
-2. Vault calls `KUBERNETES_HOST` (the K8s API) to verify the JWT is legitimate
+2. Vault calls `KUBERNETES_HOST` (the K8s API) to verify the JWT is valid
 3. If valid, Vault issues a Vault token
 
 Why export it?
@@ -92,9 +92,9 @@ Pod JWT → Vault → calls KUBERNETES_HOST → K8s API validates → Vault issu
 
 **What is a Service Account?**
 
-A Service Account is a Kubernetes identity for **pods** (not humans).
+A Service Account is a Kubernetes identity for **pods**.
 
-In the `03-configure-vault-auth.sh` script, there are two service accounts with different roles:
+In the `03-configure-vault-auth.sh` script, there are two service accounts with different purpose:
 
 | Service Account | Purpose |
 |-----------------|---------|
@@ -142,13 +142,25 @@ The Vault role in Step 3 just **declares** that `vault-sa` will be allowed - it 
 ./scripts/test-k8s-auth.sh
 ```
 
-### Step 7: Inspect Certificates (Educational)
+### Step 7: Deploy Vault Secrets Operator (Optional)
+```bash
+./scripts/07-deploy-vso.sh
+```
+
+VSO provides an alternative to Agent Injector - it syncs Vault secrets to native Kubernetes Secrets.
+
+### Step 8: Test VSO
+```bash
+./scripts/08-test-vso.sh
+```
+
+### Step 9: Inspect Certificates (Educational)
 ```bash
 ./scripts/06-inspect-certificates.sh
 ```
 
 This optional script helps you understand the Kubernetes certificate chain:
-- Displays mental models comparing production vs this lab's ngrok setup
+- Includes mental models comparing production vs this lab's ngrok setup
 - Inspects the K8s CA certificate, API server TLS certificate, and ngrok certificate
 - Shows ServiceAccount JWT token structure
 - Includes a command reference cheat sheet and troubleshooting tips
@@ -180,6 +192,31 @@ kubectl exec test-pod-injector -n vault-test -c app -- \
   cat /vault/secrets/config.txt
 ```
 
+### Test Vault Secrets Operator (VSO)
+
+```bash
+# Check VSO-synced K8s Secret
+kubectl get secret myapp-config -n vault-test -o yaml
+
+# Check pod reading secret via environment
+kubectl exec test-pod-vso -n vault-test -- env | grep username
+
+# Check pod reading secret via volume mount
+kubectl exec test-pod-vso -n vault-test -- cat /etc/secrets/username
+```
+
+## Agent Injector vs VSO
+
+| Aspect | Agent Injector | VSO |
+|--------|---------------|-----|
+| **Secret Delivery** | Ephemeral volume in pod | Native K8s Secret |
+| **Architecture** | Sidecar per pod | Central operator |
+| **Pod Awareness** | Needs Vault annotations | Standard K8s Secret consumption |
+| **Resource Usage** | Higher (sidecar per pod) | Lower (single operator) |
+| **K8s Native** | No (annotations) | Yes (CRDs) |
+| **Templating** | Yes | Yes |
+| **Use When** | Need advanced templating, broad auth | K8s-native patterns, shared secrets |
+
 ## File Structure
 
 ```
@@ -193,6 +230,8 @@ k8s-auth/
 │   ├── 04-deploy-vault-agent.sh     # Deploy injector via Helm
 │   ├── 05-deploy-test-resources.sh  # Deploy test pods
 │   ├── 06-inspect-certificates.sh   # Educational cert inspection
+│   ├── 07-deploy-vso.sh             # Deploy Vault Secrets Operator
+│   ├── 08-test-vso.sh               # Test VSO integration
 │   ├── test-k8s-auth.sh             # Run test suite
 │   └── cleanup.sh                   # Remove all resources
 ├── k8s-manifests/
@@ -200,10 +239,17 @@ k8s-auth/
 │   ├── serviceaccount.yaml          # vault-sa ServiceAccount
 │   ├── clusterrolebinding.yaml      # RBAC for SA
 │   ├── test-pod-manual.yaml         # Pod for manual auth testing
-│   └── test-pod-injector.yaml       # Pod for injector testing
+│   ├── test-pod-injector.yaml       # Pod for injector testing
+│   └── vso/                         # VSO Custom Resources
+│       ├── vault-connection.yaml    # Connection to Vault
+│       ├── vault-auth.yaml          # K8s auth (operator namespace)
+│       ├── vault-auth-local.yaml    # K8s auth (vault-test namespace)
+│       ├── vault-static-secret.yaml # Secret sync definition
+│       └── test-pod-vso.yaml        # Pod consuming K8s Secret
 ├── docs/
 │   ├── k8s-auth-flow.md             # Detailed auth flow explanation
 │   ├── vault-agent-injector.md      # Injector guide
+│   ├── vault-secrets-operator.md    # VSO guide
 │   ├── troubleshooting.md           # Lab-specific issues (Minikube + ngrok)
 │   └── k8s-auth-troubleshooting-general.md  # General K8s auth issues
 └── README.md                        # This file
@@ -238,7 +284,7 @@ minikube status
 # Is ngrok tunnel active?
 curl -s http://localhost:4040/api/tunnels | jq '.tunnels[0].public_url'
 
-# Is Vault kubernetes auth enabled?
+# Is Kubernetes auth enabled?
 vault auth list | grep kubernetes
 
 # Can pod authenticate?
@@ -252,6 +298,7 @@ kubectl exec test-pod-manual -n vault-test -- \
 
 - [Kubernetes Auth Flow](docs/k8s-auth-flow.md) - Detailed explanation of the authentication process
 - [Vault Agent Injector](docs/vault-agent-injector.md) - Guide to automatic secret injection
+- [Vault Secrets Operator](docs/vault-secrets-operator.md) - Guide to VSO and K8s-native secrets
 - [Troubleshooting (Lab)](docs/troubleshooting.md) - Minikube + ngrok specific issues
 - [Troubleshooting (General)](docs/k8s-auth-troubleshooting-general.md) - Universal K8s auth issues for any environment
 
@@ -260,3 +307,5 @@ kubectl exec test-pod-manual -n vault-test -- \
 - [Vault Kubernetes Auth](https://developer.hashicorp.com/vault/docs/auth/kubernetes)
 - [Vault Kubernetes Auth API](https://developer.hashicorp.com/vault/api-docs/auth/kubernetes)
 - [Vault Agent Injector](https://developer.hashicorp.com/vault/docs/platform/k8s/injector)
+- [Vault Secrets Operator](https://developer.hashicorp.com/vault/docs/deploy/kubernetes/vso)
+- [K8s Integrations Comparison](https://developer.hashicorp.com/vault/docs/deploy/kubernetes/comparisons)

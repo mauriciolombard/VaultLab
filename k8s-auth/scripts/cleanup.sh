@@ -18,7 +18,9 @@ echo ""
 echo -e "${YELLOW}WARNING: This will remove:${NC}"
 echo "  - Vault Kubernetes auth method and roles"
 echo "  - Kubernetes test resources (vault-test namespace)"
+echo "  - VaultAuth resources (both namespaces)"
 echo "  - Vault Agent Injector (vault namespace)"
+echo "  - Vault Secrets Operator (vault-secrets-operator namespace)"
 echo "  - vault-auth ServiceAccount"
 echo ""
 echo "The Vault cluster will remain intact."
@@ -40,9 +42,9 @@ if [ -n "$VAULT_ADDR" ] && [ -n "$VAULT_TOKEN" ]; then
     echo ""
     echo "Cleaning up Vault configuration..."
 
-    # Disable kubernetes auth
+    # Disable kubernetes auth (this also removes all roles like vso-role, test-role)
     if vault auth list 2>/dev/null | grep -q "^kubernetes/"; then
-        echo "  Disabling kubernetes auth method..."
+        echo "  Disabling kubernetes auth method (removes all K8s auth roles)..."
         vault auth disable kubernetes || echo "  Could not disable kubernetes auth"
     fi
 
@@ -67,9 +69,31 @@ if command -v kubectl &> /dev/null && kubectl cluster-info &> /dev/null 2>&1; th
     echo "  Deleting vault-test namespace..."
     kubectl delete namespace vault-test --ignore-not-found=true
 
+    # Clean up Vault Agent Injector (must uninstall Helm first, then delete cluster-scoped webhook)
+    echo "  Cleaning up Vault Agent Injector..."
+    if helm list -n vault 2>/dev/null | grep -q "^vault"; then
+        echo "    Uninstalling Vault Agent Injector Helm chart..."
+        helm uninstall vault -n vault 2>/dev/null || true
+    fi
+    # Delete cluster-scoped webhook (survives namespace deletion)
+    kubectl delete mutatingwebhookconfiguration vault-agent-injector-cfg --ignore-not-found=true
+
     # Delete vault namespace (injector)
     echo "  Deleting vault namespace..."
     kubectl delete namespace vault --ignore-not-found=true
+
+    # Delete VSO resources
+    echo "  Cleaning up Vault Secrets Operator..."
+
+    # Uninstall VSO Helm release
+    if helm list -n vault-secrets-operator 2>/dev/null | grep -q vault-secrets-operator; then
+        echo "    Uninstalling VSO Helm chart..."
+        helm uninstall vault-secrets-operator -n vault-secrets-operator 2>/dev/null || true
+    fi
+
+    # Delete VSO namespace
+    echo "    Deleting vault-secrets-operator namespace..."
+    kubectl delete namespace vault-secrets-operator --ignore-not-found=true
 
     # Delete vault-auth service account and related resources
     echo "  Deleting vault-auth resources..."

@@ -1,0 +1,69 @@
+# test-pod-vso.yaml
+# Test pod that consumes the Kubernetes Secret created by VSO
+# This demonstrates the "K8s-native" approach - the pod has no knowledge of Vault
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod-vso
+  namespace: vault-test
+  labels:
+    app: test-pod-vso
+    test-type: vso
+spec:
+  serviceAccountName: vault-sa
+
+  containers:
+    - name: app
+      image: alpine:3.19
+
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "VSO Test Pod Started"
+          echo "===================="
+          echo ""
+          echo "This pod consumes secrets via standard Kubernetes Secret."
+          echo "It has no knowledge of Vault - VSO handles the sync."
+          echo ""
+          echo "Secrets from environment variables:"
+          echo "  USERNAME: $username"
+          echo "  PASSWORD: [hidden]"
+          echo "  API_KEY: [hidden]"
+          echo ""
+          echo "Secrets from mounted volume:"
+          if [ -f /etc/secrets/username ]; then
+            echo "  /etc/secrets/username: $(cat /etc/secrets/username)"
+          else
+            echo "  (volume mount not configured)"
+          fi
+          echo ""
+          echo "Sleeping... (use kubectl exec to interact)"
+          sleep infinity
+
+      # Method 1: Consume secret as environment variables
+      envFrom:
+        - secretRef:
+            name: myapp-config
+
+      # Method 2: Mount secret as files (optional)
+      volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/secrets
+          readOnly: true
+
+      resources:
+        requests:
+          memory: "32Mi"
+          cpu: "25m"
+        limits:
+          memory: "64Mi"
+          cpu: "50m"
+
+  volumes:
+    - name: secret-volume
+      secret:
+        secretName: myapp-config
+
+  restartPolicy: Never
