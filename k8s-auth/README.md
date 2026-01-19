@@ -205,6 +205,85 @@ kubectl exec test-pod-vso -n vault-test -- env | grep username
 kubectl exec test-pod-vso -n vault-test -- cat /etc/secrets/username
 ```
 
+## Understanding Secret Paths
+
+After running the test commands, you might wonder: *Why is the JWT at that path? Why are secrets at `/vault/secrets/config.txt`?*
+
+### JWT Token Location
+
+```
+/var/run/secrets/kubernetes.io/serviceaccount/
+├── token      ← JWT signed by K8s API server
+├── ca.crt     ← K8s cluster CA certificate
+└── namespace  ← Pod's namespace name
+```
+
+This is a **Kubernetes standard**, not Vault-specific. Kubernetes automatically mounts these files for every pod with a ServiceAccount. The JWT token proves "I am this ServiceAccount in this namespace" - Vault uses this to verify the pod's identity.
+
+### Vault Secrets Location (Injector)
+
+The path `/vault/secrets/config.txt` comes from the pod's annotations in [k8s-manifests/test-pod-injector.yaml](k8s-manifests/test-pod-injector.yaml):
+
+```yaml
+vault.hashicorp.com/agent-inject-secret-config.txt: "secret/data/myapp/config"
+```
+
+The naming convention:
+```
+vault.hashicorp.com/agent-inject-secret-<FILENAME>: "<VAULT_SECRET_PATH>"
+                                       ↓
+                            /vault/secrets/<FILENAME>
+```
+
+So `agent-inject-secret-config.txt` creates `/vault/secrets/config.txt`.
+
+### Mental Map: Manual vs Injector
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    TWO APPROACHES TO VAULT + KUBERNETES                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ MANUAL (test-pod-manual)                                             │   │
+│  │                                                                      │   │
+│  │   Pod starts → Kubernetes mounts JWT automatically                   │   │
+│  │                                                                      │   │
+│  │   /var/run/secrets/kubernetes.io/serviceaccount/token               │   │
+│  │                          │                                           │   │
+│  │                          ▼                                           │   │
+│  │   Your app must:  vault write auth/kubernetes/login \               │   │
+│  │                         role=test-role jwt=@<that-token>            │   │
+│  │                          │                                           │   │
+│  │                          ▼                                           │   │
+│  │                   Get Vault token → Fetch secrets yourself           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ INJECTOR (test-pod-injector)                                         │   │
+│  │                                                                      │   │
+│  │   Pod starts → Vault Agent sidecar injected automatically           │   │
+│  │                                                                      │   │
+│  │   Agent reads the SAME JWT token internally                          │   │
+│  │                          │                                           │   │
+│  │                          ▼                                           │   │
+│  │   Agent does login automatically (using annotations)                 │   │
+│  │                          │                                           │   │
+│  │                          ▼                                           │   │
+│  │   Agent writes secrets to /vault/secrets/config.txt  ← You read this │   │
+│  │   (path determined by annotation name)                               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Insight**: The Injector automates what you do manually - it reads the same JWT, authenticates to Vault, and writes secrets to files your app can read.
+
+| Component | Source | Purpose |
+|-----------|--------|---------|
+| `/var/run/secrets/.../token` | Kubernetes (automatic) | Proves pod identity |
+| `/vault/secrets/config.txt` | Vault Agent Injector (annotation-driven) | Where agent writes secrets |
+
 ## Agent Injector vs VSO
 
 | Aspect | Agent Injector | VSO |
