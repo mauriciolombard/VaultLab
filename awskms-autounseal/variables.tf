@@ -28,6 +28,12 @@ variable "instance_type" {
   default     = "t3.micro"
 }
 
+variable "ami_id" {
+  description = "AMI ID for Vault EC2 instances (pinned to prevent unexpected replacements)"
+  type        = string
+  default     = "ami-0e3008cbd8722baf0" # Amazon Linux 2023 - us-east-1 - Jan 2026
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string

@@ -2,7 +2,7 @@
 resource "aws_instance" "vault" {
   count = 3
 
-  ami                    = data.aws_ami.amazon_linux_2023.id
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = aws_key_pair.vault.key_name
   subnet_id              = aws_subnet.public[count.index].id

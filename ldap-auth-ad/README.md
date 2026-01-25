@@ -30,6 +30,19 @@ This Terraform configuration deploys a Windows Server 2022 EC2 instance with Act
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## How It Works
+
+When a user runs `vault login -method=ldap username=alice`:
+
+1. **Vault binds to AD** using the service account (`vault-svc@vaultlab.local`)
+2. **Searches for the user** in `CN=Users,DC=vaultlab,DC=local` by `sAMAccountName`
+3. **Verifies password** by attempting to bind as the user
+4. **Queries group membership** using AD's nested group OID (`1.2.840.113556.1.4.1941`)
+5. **Maps AD groups to Vault policies** (e.g., `Vault-Admins` → `ldap-admins` policy)
+6. **Returns a token** with the mapped policies attached
+
+For detailed authentication flow diagrams and AD-specific configuration, see [docs/ad-auth-flow.md](docs/ad-auth-flow.md).
+
 ## Prerequisites
 
 1. **Vault cluster deployed** via `awskms-autounseal/`
@@ -77,7 +90,7 @@ vault_token  = "hvs.xxxxx"           # Root or admin token
 
 ```bash
 terraform init
-terraform apply
+terraform apply -auto-approve
 ```
 
 **IMPORTANT:** Windows AD setup takes **10-15 minutes** after EC2 launch. The server will:
@@ -103,21 +116,43 @@ Get-ADDomain
 Get-ADUser -Filter * | Select-Object SamAccountName
 ```
 
-### 6. Test AD LDAP Connectivity
+### 6. Test LDAP from Vault Server
+
+LDAP port 389 is only accessible from within the VPC. SSH into a Vault node to test:
 
 ```bash
-chmod +x scripts/*.sh
-./scripts/test-ad.sh $(terraform output -raw ad_server_public_ip)
+# Get the SSH command for vault1
+cd ../awskms-autounseal
+$(terraform output -json ssh_connection_commands | jq -r '.vault1')
 ```
+
+Once on the Vault server:
+
+```bash
+# Install ldapsearch (one-time)
+sudo yum install -y openldap-clients
+
+# Test service account bind
+ldapsearch -x -H ldap://10.0.1.49:389 \
+  -D 'vault-svc@vaultlab.local' -w 'VaultBind123!' \
+  -b 'DC=vaultlab,DC=local' '(sAMAccountName=alice)' sAMAccountName memberOf
+
+# Test alice user bind
+ldapsearch -x -H ldap://10.0.1.49:389 \
+  -D 'alice@vaultlab.local' -w 'Password123!' \
+  -b '' -s base namingContexts
+
+# List all users
+ldapsearch -x -H ldap://10.0.1.49:389 \
+  -D 'vault-svc@vaultlab.local' -w 'VaultBind123!' \
+  -b 'CN=Users,DC=vaultlab,DC=local' '(objectClass=user)' sAMAccountName
+```
+
+**Note:** Replace `10.0.1.49` with `$(terraform output -raw ad_server_private_ip)` from `ldap-auth-ad/`. Use single quotes around passwords containing `!` to avoid shell interpretation.
 
 ### 7. Test Vault LDAP Login
 
-```bash
-export VAULT_ADDR=$(cd ../awskms-autounseal && terraform output -raw vault_addr)
-./scripts/test-vault-auth.sh
-```
-
-Or manually:
+From anywhere (your local machine works):
 ```bash
 vault login -method=ldap username=alice password=Password123!
 vault token lookup  # Should show ldap-admins policy
@@ -147,9 +182,8 @@ ldap-auth-ad/
 ├── templates/
 │   └── ad-user-data.ps1    # PowerShell script for AD setup
 ├── scripts/
-│   ├── create-ad-users.ps1 # Manual user creation script
-│   ├── test-ad.sh          # LDAP connectivity tests
-│   └── test-vault-auth.sh  # Vault auth tests
+│   ├── create-ad-users.ps1 # Manual user creation script (run on AD server)
+│   └── test-vault-auth.sh  # Vault LDAP auth tests
 └── docs/
     ├── ad-auth-flow.md     # Authentication flow diagram
     └── troubleshooting.md  # Common issues and solutions
@@ -187,12 +221,8 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues.
 ### Quick Checks
 
 ```bash
-# Test LDAP connectivity
-ldapsearch -x -H ldap://$(terraform output -raw ad_server_public_ip):389 \
-    -D "vault-svc@vaultlab.local" \
-    -w "VaultBind123!" \
-    -b "DC=vaultlab,DC=local" \
-    "(sAMAccountName=alice)" dn
+# Test Vault LDAP login (works from anywhere)
+vault login -method=ldap username=alice password=Password123!
 
 # Check Vault LDAP config
 vault read auth/ldap/config
@@ -200,6 +230,8 @@ vault read auth/ldap/config
 # List LDAP group mappings (case-sensitive!)
 vault list auth/ldap/groups
 ```
+
+**Note:** Direct LDAP testing (ldapsearch) must be run from a Vault node inside the VPC. See [Step 6](#6-test-ldap-from-vault-server) above.
 
 ### Common Issues
 

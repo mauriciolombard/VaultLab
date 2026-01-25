@@ -2,6 +2,8 @@
 
 ## Quick Diagnostic Commands
 
+> **Note:** All `ldapsearch` commands in this guide must be run from **inside the VPC** (e.g., SSH into a Vault node). The AD server's LDAP port 389 is not exposed to the internet for security reasons. See the README for SSH instructions.
+
 ### Test AD Server Connectivity
 ```bash
 # From Vault node or local machine

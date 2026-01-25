@@ -50,3 +50,8 @@ output "export_vault_addr" {
   description = "Export command for VAULT_ADDR"
   value       = "export VAULT_ADDR=http://${aws_lb.vault.dns_name}:8200"
 }
+
+output "vpc_id" {
+  description = "ID of the VPC"
+  value       = aws_vpc.vault.id
+}
