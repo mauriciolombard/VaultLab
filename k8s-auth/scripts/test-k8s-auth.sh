@@ -6,6 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MINIKUBE_PROFILE="vault-k8s"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -50,7 +51,7 @@ if ! vault status &> /dev/null; then
 fi
 pass "Vault is accessible"
 
-if ! minikube status &> /dev/null; then
+if ! minikube status -p $MINIKUBE_PROFILE &> /dev/null; then
     fail "Minikube is not running"
     exit 1
 fi

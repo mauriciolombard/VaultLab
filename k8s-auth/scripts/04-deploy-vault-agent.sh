@@ -6,6 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MINIKUBE_PROFILE="vault-k8s"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -29,7 +30,7 @@ echo ""
 
 # Check if Minikube is running
 echo "Checking Minikube..."
-if ! minikube status &> /dev/null; then
+if ! minikube status -p $MINIKUBE_PROFILE &> /dev/null; then
     echo -e "${RED}ERROR: Minikube is not running${NC}"
     echo "Run ./scripts/01-setup-minikube.sh first"
     exit 1

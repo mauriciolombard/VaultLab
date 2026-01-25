@@ -6,6 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MINIKUBE_PROFILE="vault-k8s"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -135,7 +136,7 @@ echo -e "${GREEN}  Cleanup Complete!${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
 echo "To also stop Minikube:"
-echo "  $ minikube stop"
-echo "  $ minikube delete  (to fully remove)"
+echo "  $ minikube stop -p $MINIKUBE_PROFILE"
+echo "  $ minikube delete -p $MINIKUBE_PROFILE  (to fully remove)"
 echo ""
 echo "The Vault cluster remains intact and accessible."

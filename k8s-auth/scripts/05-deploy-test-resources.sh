@@ -7,6 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANIFEST_DIR="$SCRIPT_DIR/../k8s-manifests"
+MINIKUBE_PROFILE="vault-k8s"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -29,7 +30,7 @@ echo -e "${GREEN}✓${NC} VAULT_ADDR: $VAULT_ADDR"
 echo ""
 
 # Check if Minikube is running
-if ! minikube status &> /dev/null; then
+if ! minikube status -p $MINIKUBE_PROFILE &> /dev/null; then
     echo -e "${RED}ERROR: Minikube is not running${NC}"
     exit 1
 fi

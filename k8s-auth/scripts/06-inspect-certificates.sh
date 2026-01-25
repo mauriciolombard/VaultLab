@@ -15,6 +15,9 @@
 
 set -e
 
+# Minikube profile for macOS Tahoe BTRFS workaround
+MINIKUBE_PROFILE="vault-k8s"
+
 # Colors for readability
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -197,7 +200,7 @@ if ! command -v kubectl &> /dev/null; then
     exit 1
 fi
 
-if ! minikube status &> /dev/null 2>&1; then
+if ! minikube status -p $MINIKUBE_PROFILE &> /dev/null 2>&1; then
     echo -e "${YELLOW}WARNING: Minikube is not running. Some inspections will be skipped.${NC}"
     MINIKUBE_RUNNING=false
 else

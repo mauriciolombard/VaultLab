@@ -6,6 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MINIKUBE_PROFILE="vault-k8s"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -55,13 +56,13 @@ echo ""
 # Check if Minikube is already running
 echo "Checking Minikube status..."
 echo "---------------------------"
-if minikube status &> /dev/null; then
+if minikube status -p $MINIKUBE_PROFILE &> /dev/null; then
     echo -e "${YELLOW}Minikube is already running.${NC}"
     read -p "Do you want to delete and recreate it? (y/N): " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Deleting existing Minikube cluster..."
-        minikube delete
+        minikube delete -p $MINIKUBE_PROFILE
     else
         echo "Using existing Minikube cluster."
         echo ""
@@ -81,7 +82,9 @@ echo "Starting Minikube cluster..."
 echo "----------------------------"
 
 # Start with docker driver (most common) and expose API server
+# Using custom profile to avoid BTRFS storage driver issue on macOS Tahoe
 minikube start \
+    --profile=$MINIKUBE_PROFILE \
     --driver=docker \
     --memory=4096 \
     --cpus=2 \

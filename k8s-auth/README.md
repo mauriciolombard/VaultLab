@@ -341,10 +341,10 @@ k8s-auth/
 ./scripts/cleanup.sh
 
 # Stop Minikube
-minikube stop
+minikube stop -p vault-k8s
 
 # Fully delete Minikube (optional)
-minikube delete
+minikube delete -p vault-k8s
 ```
 
 The Vault cluster on AWS remains intact.
@@ -358,7 +358,7 @@ The Vault cluster on AWS remains intact.
 
 ```bash
 # Is Minikube running?
-minikube status
+minikube status -p vault-k8s
 
 # Is ngrok tunnel active?
 curl -s http://localhost:4040/api/tunnels | jq '.tunnels[0].public_url'

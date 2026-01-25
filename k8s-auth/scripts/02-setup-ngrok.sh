@@ -9,6 +9,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MINIKUBE_PROFILE="vault-k8s"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -84,7 +85,7 @@ fi
 
 # Check if Minikube is running
 echo "Checking Minikube status..."
-if ! minikube status &> /dev/null; then
+if ! minikube status -p $MINIKUBE_PROFILE &> /dev/null; then
     echo -e "${RED}ERROR: Minikube is not running${NC}"
     echo "Run ./01-setup-minikube.sh first"
     exit 1
@@ -112,7 +113,7 @@ if pgrep -x "ngrok" > /dev/null; then
 fi
 
 # For Minikube with docker driver, determine the correct target
-MINIKUBE_IP=$(minikube ip 2>/dev/null || echo "127.0.0.1")
+MINIKUBE_IP=$(minikube ip -p $MINIKUBE_PROFILE 2>/dev/null || echo "127.0.0.1")
 echo "Minikube IP: $MINIKUBE_IP"
 
 # Determine tunnel target based on API host
