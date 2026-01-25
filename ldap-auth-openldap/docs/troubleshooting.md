@@ -128,6 +128,12 @@ Understanding WHERE in the flow your error occurs is the key to fast resolution.
 | 81 | Server Down | Cannot contact server | 1 |
 | 200 | Network Error | Connection failed | 1 |
 
+**External References:**
+- [LDAP.com Result Code Reference](https://ldap.com/ldap-result-code-reference/) - Comprehensive, well-organized reference
+- [RFC 4511 - LDAPv3 Protocol](https://www.rfc-editor.org/rfc/rfc4511) - Official specification (see Appendix A)
+- [OpenLDAP Admin Guide: Result Codes](https://www.openldap.org/doc/admin24/appendix-ldap-result-codes.html) - Official OpenLDAP documentation
+- [LDAPWiki: LDAP Result Codes](https://ldapwiki.com/wiki/Wiki.jsp?page=LDAP+Result+Codes) - Community wiki with practical examples
+
 ---
 
 ## Phase 1: Connectivity
