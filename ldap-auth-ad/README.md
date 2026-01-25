@@ -115,23 +115,13 @@ Once on the Vault server:
 # Install ldapsearch (one-time)
 sudo yum install -y openldap-clients
 
-# Test service account bind
-ldapsearch -x -H ldap://10.0.1.49:389 \
+# Test connectivity to AD server
+ldapsearch -x -v -H ldap://<AD_PRIVATE_IP>:389 \
   -D 'vault-svc@vaultlab.local' -w 'VaultBind123!' \
-  -b 'DC=vaultlab,DC=local' '(sAMAccountName=alice)' sAMAccountName memberOf
-
-# Test alice user bind
-ldapsearch -x -H ldap://10.0.1.49:389 \
-  -D 'alice@vaultlab.local' -w 'Password123!' \
-  -b '' -s base namingContexts
-
-# List all users
-ldapsearch -x -H ldap://10.0.1.49:389 \
-  -D 'vault-svc@vaultlab.local' -w 'VaultBind123!' \
-  -b 'CN=Users,DC=vaultlab,DC=local' '(objectClass=user)' sAMAccountName
+  -b '' -s base
 ```
 
-**Note:** Replace `10.0.1.49` with `$(terraform output -raw ad_server_private_ip)` from `ldap-auth-ad/`. Use single quotes around passwords containing `!` to avoid shell interpretation.
+**Note:** Replace `<AD_PRIVATE_IP>` with `$(terraform output -raw ad_server_private_ip)` from `ldap-auth-ad/`.
 
 ### 6. Test Vault LDAP Login
 
