@@ -99,24 +99,7 @@ terraform apply -auto-approve
 3. Restart automatically
 4. Create test users and groups after restart
 
-### 5. Wait for AD to be Ready
-
-Check the setup progress:
-```bash
-# Get Windows admin password
-terraform output -raw windows_admin_password
-
-# RDP to the server
-terraform output rdp_connection_info
-```
-
-Via RDP, check `C:\AD-Setup.log` or run:
-```powershell
-Get-ADDomain
-Get-ADUser -Filter * | Select-Object SamAccountName
-```
-
-### 6. Test LDAP from Vault Server
+### 5. Test LDAP from Vault Server
 
 LDAP port 389 is only accessible from within the VPC. SSH into a Vault node to test:
 
@@ -150,7 +133,7 @@ ldapsearch -x -H ldap://10.0.1.49:389 \
 
 **Note:** Replace `10.0.1.49` with `$(terraform output -raw ad_server_private_ip)` from `ldap-auth-ad/`. Use single quotes around passwords containing `!` to avoid shell interpretation.
 
-### 7. Test Vault LDAP Login
+### 6. Test Vault LDAP Login
 
 From anywhere (your local machine works):
 ```bash
@@ -231,7 +214,7 @@ vault read auth/ldap/config
 vault list auth/ldap/groups
 ```
 
-**Note:** Direct LDAP testing (ldapsearch) must be run from a Vault node inside the VPC. See [Step 6](#6-test-ldap-from-vault-server) above.
+**Note:** Direct LDAP testing (ldapsearch) must be run from a Vault node inside the VPC. See [Step 5](#5-test-ldap-from-vault-server) above.
 
 ### Common Issues
 
