@@ -225,7 +225,7 @@ vault list auth/ldap/groups
 ## Cleanup
 
 ```bash
-terraform destroy
+terraform destroy -auto-approve
 ```
 
 This removes:
@@ -241,9 +241,3 @@ The Vault cluster (`awskms-autounseal/`) remains intact.
 - [AD Authentication Flow](docs/ad-auth-flow.md) - Detailed auth flow diagram and AD-specific config
 - [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
 
-## Cost Considerations
-
-- **Instance type:** t3.medium (~$0.0416/hour)
-- Windows Server 2022 includes license in EC2 pricing
-- **Estimated cost:** ~$30/month if running 24/7
-- **Tip:** Destroy when not in use to minimize costs

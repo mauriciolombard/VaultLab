@@ -75,7 +75,7 @@ vault_token  = "hvs.xxxxx"           # Root or admin token
 
 ```bash
 terraform init
-terraform apply
+terraform apply -auto-approve
 ```
 
 ### 5. Test LDAP Connectivity
@@ -169,7 +169,7 @@ vault list auth/ldap/groups
 ## Cleanup
 
 ```bash
-terraform destroy
+terraform destroy -auto-approve
 ```
 
 This removes:
