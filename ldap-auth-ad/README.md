@@ -112,10 +112,15 @@ $(terraform output -json ssh_connection_commands | jq -r '.vault1')
 Once on the Vault server:
 
 ```bash
-# Install ldapsearch (one-time)
-sudo yum install -y openldap-clients
+# Install connectivity tools (one-time)
+sudo yum install -y openldap-clients telnet nmap-ncat
 
-# Test connectivity to AD server
+# Quick port connectivity test (use telnet or nc)
+nc -zv <AD_PRIVATE_IP> 389
+# or
+telnet <AD_PRIVATE_IP> 389
+
+# Test LDAP query to AD server
 ldapsearch -x -v -H ldap://<AD_PRIVATE_IP>:389 \
   -D 'vault-svc@vaultlab.local' -w 'VaultBind123!' \
   -b '' -s base
