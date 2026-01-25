@@ -1,5 +1,7 @@
 # OpenLDAP Authentication for Vault
 
+> **Prerequisite:** This integration requires the Vault cluster from `awskms-autounseal/` to be deployed and running in AWS before proceeding.
+
 This Terraform configuration deploys an OpenLDAP server and configures Vault LDAP authentication. It integrates with an existing Vault cluster (from `awskms-autounseal/`).
 
 ## Architecture

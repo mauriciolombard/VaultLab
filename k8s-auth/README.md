@@ -1,5 +1,7 @@
 # Kubernetes Authentication Lab
 
+> **Prerequisite:** This integration requires the Vault cluster from `awskms-autounseal/` to be deployed and running in AWS before proceeding.
+
 This module sets up Vault Kubernetes authentication using a local Minikube cluster connected to your existing Vault cluster on AWS via an ngrok tunnel.
 
 ## Architecture

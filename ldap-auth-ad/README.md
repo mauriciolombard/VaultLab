@@ -1,5 +1,7 @@
 # Active Directory Authentication for Vault
 
+> **Prerequisite:** This integration requires the Vault cluster from `awskms-autounseal/` to be deployed and running in AWS before proceeding.
+
 This Terraform configuration deploys a Windows Server 2022 EC2 instance with Active Directory Domain Services (AD DS) and configures Vault LDAP authentication. It integrates with an existing Vault cluster (from `awskms-autounseal/`).
 
 ## Architecture
