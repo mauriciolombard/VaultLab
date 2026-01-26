@@ -29,6 +29,19 @@ This Terraform configuration deploys an OpenLDAP server and configures Vault LDA
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## How It Works
+
+When a user runs `vault login -method=ldap username=alice`:
+
+1. **Vault binds to OpenLDAP** using the admin account (`cn=admin,dc=vaultlab,dc=local`)
+2. **Searches for the user** in `ou=users,dc=vaultlab,dc=local` by `uid` attribute
+3. **Verifies password** by attempting to bind as the user's full DN
+4. **Queries group membership** using filter `(member={{.UserDN}})`
+5. **Maps LDAP groups to Vault policies** (e.g., `vault-admins` → `ldap-admins` policy)
+6. **Returns a token** with the mapped policies attached
+
+For detailed authentication flow diagrams and OpenLDAP-specific configuration, see [docs/ldap-auth-flow.md](docs/ldap-auth-flow.md).
+
 ## Prerequisites
 
 1. **Vault cluster deployed** via `awskms-autounseal/`
@@ -80,6 +93,29 @@ terraform apply -auto-approve
 
 ### 5. Test LDAP Connectivity
 
+**Note:** If LDAP is restricted to VPC-only (`allowed_ldap_cidrs = []`), you must test from a Vault node:
+
+```bash
+# SSH into a Vault node
+cd ../awskms-autounseal
+$(terraform output -json ssh_connection_commands | jq -r '.vault1')
+
+# Install connectivity tools (one-time)
+sudo yum install -y openldap-clients telnet nmap-ncat
+
+# Quick port connectivity test (use telnet or nc)
+nc -zv <LDAP_PRIVATE_IP> 389
+# or
+telnet <LDAP_PRIVATE_IP> 389
+
+# Test LDAP query
+ldapsearch -x -H ldap://<LDAP_PRIVATE_IP>:389 -b "dc=vaultlab,dc=local" "(objectClass=*)" dn
+```
+
+**Note:** Replace `<LDAP_PRIVATE_IP>` with `$(terraform output -raw ldap_server_private_ip)` from `ldap-auth-openldap/`.
+
+For public access testing (if `allowed_ldap_cidrs` includes your IP):
+
 ```bash
 chmod +x scripts/*.sh
 ./scripts/test-ldap.sh $(terraform output -raw ldap_server_public_ip)
@@ -87,12 +123,6 @@ chmod +x scripts/*.sh
 
 ### 6. Test Vault LDAP Login
 
-```bash
-export VAULT_ADDR=$(terraform output -raw vault_addr 2>/dev/null || echo "http://your-vault:8200")
-./scripts/test-vault-auth.sh
-```
-
-Or manually:
 ```bash
 vault login -method=ldap username=alice password=password123
 vault token lookup  # Should show ldap-admins policy
@@ -105,6 +135,29 @@ vault token lookup  # Should show ldap-admins policy
 | alice | password123 | vault-admins | ldap-admins (full access) |
 | bob | password123 | vault-users | ldap-users (read-only) |
 | charlie | password123 | vault-users | ldap-users (read-only) |
+
+**Admin/Bind Account:** `cn=admin,dc=vaultlab,dc=local` (Password: `admin123`)
+
+## Utility Scripts
+
+### `scripts/test-ldap.sh` (LDAP Connectivity)
+Comprehensive test suite for validating OpenLDAP connectivity and directory structure.
+
+```bash
+./scripts/test-ldap.sh $(terraform output -raw ldap_server_public_ip)
+```
+
+Tests include: anonymous bind, admin bind, user listing, group listing, user authentication (alice/bob), and group membership queries.
+
+### `scripts/test-vault-auth.sh` (Vault Authentication)
+Validates Vault LDAP authentication end-to-end.
+
+```bash
+export VAULT_ADDR="http://<NLB_ADDRESS>:8200"
+./scripts/test-vault-auth.sh
+```
+
+Tests include: auth method verification, user logins (alice/bob), policy enforcement, wrong password rejection, and group mapping verification.
 
 ## Directory Structure
 
@@ -131,6 +184,18 @@ ldap-auth-openldap/
     ├── ldap-auth-flow.md   # Authentication flow diagram
     └── troubleshooting.md  # Common issues and solutions
 ```
+
+## Key Differences from Active Directory
+
+| Aspect | OpenLDAP | Active Directory |
+|--------|----------|------------------|
+| User attribute | `uid` | `sAMAccountName` |
+| Bind format | Full DN (`uid=alice,ou=users,...`) | UPN (`user@domain`) |
+| User container | `ou=users,dc=...` | `CN=Users,DC=...` |
+| Group filter | Simple member filter `(member={{.UserDN}})` | Uses OID for nested groups |
+| Admin account | `cn=admin,dc=...` | Service account UPN |
+| Group names | Lowercase convention (`vault-admins`) | PascalCase (`Vault-Admins`) |
+| Setup time | ~2 minutes | 10-15 minutes (AD DS promotion) |
 
 ## Outputs
 
@@ -165,6 +230,13 @@ vault read auth/ldap/config
 # List LDAP group mappings
 vault list auth/ldap/groups
 ```
+
+### Common Issues
+
+1. **LDAP not accessible** - Check if `allowed_ldap_cidrs` includes your IP, or test from within VPC
+2. **Wrong userattr** - Must be `uid` for OpenLDAP (not `sAMAccountName`)
+3. **Bind DN format** - OpenLDAP uses full DN (`cn=admin,dc=...`), not UPN format
+4. **Group not mapping** - Ensure group names match exactly (case-sensitive: `vault-admins`)
 
 ## Cleanup
 
