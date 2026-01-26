@@ -146,6 +146,28 @@ vault token lookup  # Should show ldap-admins policy
 
 **Service Account:** `vault-svc@vaultlab.local` (Password: `VaultBind123!`)
 
+## Utility Scripts
+
+### `scripts/create-ad-users.ps1` (Fallback)
+Users and groups are created **automatically** during deployment via a scheduled task in the EC2 user data. This script exists as a recovery option if automated creation fails.
+
+**When to use:** Only if users don't exist after waiting 15+ minutes post-deployment.
+
+```powershell
+# RDP into the AD server, then run:
+.\create-ad-users.ps1 -DomainName "vaultlab.local" -ServicePassword "VaultBind123!" -TestUserPassword "Password123!"
+```
+
+### `scripts/test-vault-auth.sh` (Validation)
+Comprehensive test suite for validating Vault LDAP authentication. Run manually after deployment.
+
+```bash
+export VAULT_ADDR="http://<NLB_ADDRESS>:8200"
+./scripts/test-vault-auth.sh
+```
+
+Tests include: auth method verification, user logins, UPN format, policy enforcement, and group mapping.
+
 ## Directory Structure
 
 ```
@@ -160,8 +182,8 @@ ldap-auth-ad/
 ├── templates/
 │   └── ad-user-data.ps1    # PowerShell script for AD setup
 ├── scripts/
-│   ├── create-ad-users.ps1 # Manual user creation script (run on AD server)
-│   └── test-vault-auth.sh  # Vault LDAP auth tests
+│   ├── create-ad-users.ps1 # FALLBACK: Manual user creation if automated setup fails
+│   └── test-vault-auth.sh  # Post-deployment validation (run manually)
 └── docs/
     ├── ad-auth-flow.md     # Authentication flow diagram
     └── troubleshooting.md  # Common issues and solutions
