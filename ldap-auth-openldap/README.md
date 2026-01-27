@@ -112,14 +112,8 @@ telnet <LDAP_PRIVATE_IP> 389
 ldapsearch -x -H ldap://<LDAP_PRIVATE_IP>:389 -b "dc=vaultlab,dc=local" "(objectClass=*)" dn
 ```
 
-**Note:** Replace `<LDAP_PRIVATE_IP>` with `$(terraform output -raw ldap_server_private_ip)` from `ldap-auth-openldap/`.
+**Note:** Replace `<LDAP_PRIVATE_IP>` with `terraform output -raw ldap_server_private_ip` from `ldap-auth-openldap/`.
 
-For public access testing (if `allowed_ldap_cidrs` includes your IP):
-
-```bash
-chmod +x scripts/*.sh
-./scripts/test-ldap.sh $(terraform output -raw ldap_server_public_ip)
-```
 
 ### 6. Test Vault LDAP Login
 
