@@ -1,0 +1,29 @@
+# Copy this file to terraform.tfvars and fill in the values
+
+# AWS Configuration
+aws_region   = "us-east-1"
+cluster_name = "vaultlab"
+
+# VPC Configuration (get these from awskms-autounseal outputs)
+vpc_id    = "vpc-xxxxxxxxx"
+subnet_id = ""  # Optional - uses first available subnet if empty
+
+# Vault Configuration (get these from awskms-autounseal outputs)
+vault_addr  = "http://your-nlb-dns:8200"
+vault_token = "hvs.xxxxx"  # Root token or admin token
+
+# Instance Configuration (t3.small recommended for MongoDB memory requirements)
+instance_type = "t3.small"
+
+# Access Control
+allowed_ssh_cidrs = ["0.0.0.0/0"]  # Restrict in production
+allowed_db_cidrs  = []              # Empty = VPC CIDR only
+
+# MongoDB Configuration
+mongodb_db_name = "vaultdb"
+
+# Vault Database Secrets Engine
+configure_vault_db = true
+vault_mount_path   = "database/mongodb"
+default_ttl        = 3600   # 1 hour
+max_ttl            = 86400  # 24 hours
