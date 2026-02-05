@@ -54,7 +54,7 @@ DR REPLICATION FLOW
 - Secondary is completely passive (cannot serve requests)
 - Root token on secondary is invalidated
 - Used for disaster recovery scenarios
-- Requires DR operation token to promote secondary
+- Requires DR operation token for operations and to promote secondary [https://support.hashicorp.com/hc/en-us/articles/4645031885843-How-to-list-peers-on-the-secondary-DR-cluster](https://support.hashicorp.com/hc/en-us/articles/4645031885843-How-to-list-peers-on-the-secondary-DR-cluster)
 
 ### Performance Replication
 
