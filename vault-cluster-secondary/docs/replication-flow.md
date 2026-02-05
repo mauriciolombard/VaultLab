@@ -92,7 +92,7 @@ PERFORMANCE REPLICATION FLOW
 - Secondary can serve read requests (reduces primary load)
 - Writes are forwarded to primary, then replicated back
 - Secondary maintains its own token store
-- Root token on secondary is retained
+- Primary's root token is NOT valid on secondary (use recovery/unseal keys to generate new)
 
 ## What Gets Replicated
 
@@ -166,125 +166,9 @@ Port 8200: API requests and replication control
 Port 8201: Cluster communication and data replication stream
 ```
 
-## Replication Setup Flow
-
-### DR Replication Setup
-
-```
-STEP-BY-STEP: DR REPLICATION SETUP
-
-1. ENABLE PRIMARY
-   PRIMARY$ vault write -f sys/replication/dr/primary/enable
-
-   Result: Primary enters "dr_primary" mode
-
-2. GENERATE SECONDARY TOKEN
-   PRIMARY$ vault write sys/replication/dr/primary/secondary-token \
-            id="dr-secondary"
-
-   Result: Wrapped token for secondary activation
-
-3. ENABLE SECONDARY
-   SECONDARY$ vault write sys/replication/dr/secondary/enable \
-              token="<wrapped-token>" \
-              primary_api_addr="http://primary:8200"
-
-   Result:
-   - Secondary enters "dr_secondary" mode
-   - Data sync begins
-   - Root token invalidated on secondary
-
-4. VERIFY
-   PRIMARY$ vault read sys/replication/dr/status
-   SECONDARY$ vault read sys/replication/dr/status
-```
-
-### Performance Replication Setup
-
-```
-STEP-BY-STEP: PERFORMANCE REPLICATION SETUP
-
-1. ENABLE PRIMARY
-   PRIMARY$ vault write -f sys/replication/performance/primary/enable
-
-2. GENERATE SECONDARY TOKEN
-   PRIMARY$ vault write sys/replication/performance/primary/secondary-token \
-            id="perf-secondary"
-
-3. ENABLE SECONDARY
-   SECONDARY$ vault write sys/replication/performance/secondary/enable \
-              token="<wrapped-token>" \
-              primary_api_addr="http://primary:8200"
-
-4. VERIFY
-   PRIMARY$ vault read sys/replication/performance/status
-   SECONDARY$ vault read sys/replication/performance/status
-```
-
 ## DR Failover Process
 
-```
-DR FAILOVER SEQUENCE
-
-BEFORE FAILOVER:
-+-------------------+                     +-------------------+
-|     PRIMARY       |        ACTIVE       |    SECONDARY      |
-|     (Active)      | ==================> |    (Standby)      |
-+-------------------+                     +-------------------+
-
-PRIMARY GOES DOWN:
-+-------------------+                     +-------------------+
-|     PRIMARY       |                     |    SECONDARY      |
-|     (DOWN)        |         X           |    (Standby)      |
-+-------------------+                     +-------------------+
-
-PROMOTE SECONDARY:
-1. Generate DR operation token (requires recovery keys)
-   SECONDARY$ vault operator generate-root -dr-token
-
-2. Promote to primary
-   SECONDARY$ vault write -f sys/replication/dr/secondary/promote \
-              dr_operation_token="<dr-token>"
-
-AFTER FAILOVER:
-+-------------------+                     +-------------------+
-|     PRIMARY       |                     |    SECONDARY      |
-|     (DOWN)        |                     |    (Now PRIMARY)  |
-+-------------------+                     +-------------------+
-
-RESTORE OLD PRIMARY AS SECONDARY (later):
-OLD-PRIMARY$ vault write sys/replication/dr/secondary/enable \
-             token="<new-secondary-token>"
-```
-
-## Common Commands Reference
-
-```bash
-# Check overall replication status
-vault read sys/replication/status
-
-# Check DR status
-vault read sys/replication/dr/status
-
-# Check Performance status
-vault read sys/replication/performance/status
-
-# List connected secondaries (from primary)
-vault read sys/replication/dr/status
-vault read sys/replication/performance/status
-
-# Revoke a secondary (from primary)
-vault write sys/replication/dr/primary/revoke-secondary id="<secondary-id>"
-vault write sys/replication/performance/primary/revoke-secondary id="<secondary-id>"
-
-# Disable replication
-# On Primary:
-vault write -f sys/replication/dr/primary/disable
-vault write -f sys/replication/performance/primary/disable
-# On Secondary (makes it standalone):
-vault write -f sys/replication/dr/secondary/disable
-vault write -f sys/replication/performance/secondary/disable
-```
+See: [https://support.hashicorp.com/hc/en-us/articles/360001921007-Vault-CLI-Guide-to-Disaster-Recovery-Replication-Failover](https://support.hashicorp.com/hc/en-us/articles/360001921007-Vault-CLI-Guide-to-Disaster-Recovery-Replication-Failover)
 
 ## Related Documentation
 
