@@ -161,3 +161,9 @@ terraform destroy -auto-approve
 - VPC and all networking components
 - Security groups
 - The local `vault-key.pem` SSH key will remain (delete manually if needed)
+
+## Important Gotchas
+
+**Node count is hardcoded to 3** - The `count = 3` is hardcoded in multiple files (`vpc.tf`, `ec2.tf`, `nlb.tf`). Changing the cluster size requires modifying these files directly; it's not a simple variable change. The Raft node IDs (`vault1`, `vault2`, `vault3`) are also generated based on this count. Additionally, increasing node count beyond the region's available AZs is non-trivial because subnets are mapped 1:1 to availability zones (`availability_zone = ...names[count.index]`). Many AWS regions have only 3 AZs, so expanding beyond that would require logic to distribute nodes across AZs (e.g., modulo indexing) or allowing multiple nodes per AZ.
+
+**Region requires AMI update** - The default `ami_id` is pinned to `us-east-1`. AMIs are region-specific, so deploying to a different region requires finding the equivalent Amazon Linux 2023 AMI for that region and updating `ami_id` in your `terraform.tfvars`.

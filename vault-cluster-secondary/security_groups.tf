@@ -31,15 +31,6 @@ resource "aws_security_group" "vault" {
     self        = true
   }
 
-  # Vault Cluster from peer VPC (replication)
-  ingress {
-    description = "Vault cluster from peer"
-    from_port   = 8201
-    to_port     = 8201
-    protocol    = "tcp"
-    cidr_blocks = [var.peer_vpc_cidr]
-  }
-
   # All outbound traffic
   egress {
     description = "All outbound"
@@ -52,6 +43,27 @@ resource "aws_security_group" "vault" {
   tags = {
     Name = "${var.cluster_name}-vault-sg"
   }
+}
+
+# Allow replication traffic FROM primary cluster VPC (always enabled for replication lab)
+resource "aws_security_group_rule" "vault_replication_8200_from_peer" {
+  type              = "ingress"
+  from_port         = 8200
+  to_port           = 8200
+  protocol          = "tcp"
+  cidr_blocks       = [var.primary_vpc_cidr]
+  security_group_id = aws_security_group.vault.id
+  description       = "Vault API/replication from primary cluster"
+}
+
+resource "aws_security_group_rule" "vault_replication_8201_from_peer" {
+  type              = "ingress"
+  from_port         = 8201
+  to_port           = 8201
+  protocol          = "tcp"
+  cidr_blocks       = [var.primary_vpc_cidr]
+  security_group_id = aws_security_group.vault.id
+  description       = "Vault cluster/replication from primary cluster"
 }
 
 # Security Group for NLB (allow health checks)

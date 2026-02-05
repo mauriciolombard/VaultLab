@@ -1,0 +1,18 @@
+# Vault Enterprise License (required)
+vault_license = "02MV4UU43BK5HGYYTOJZWFQMTMNN..."
+
+# Primary cluster VPC ID (required - get from awskms-autounseal output)
+# Run: cd ../awskms-autounseal && terraform output vpc_id
+primary_vpc_id = "vpc-xxxxxxxxx"
+
+# Primary cluster VPC CIDR (optional - default is 10.0.0.0/16)
+# primary_vpc_cidr = "10.0.0.0/16"
+
+# AWS Region (optional - default is us-east-1)
+# aws_region = "us-east-1"
+
+# Vault version (optional - default is 1.20.2+ent)
+# vault_version = "1.20.2+ent"
+
+# Instance type (optional - default is t3.micro)
+# instance_type = "t3.micro"

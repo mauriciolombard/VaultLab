@@ -1,5 +1,5 @@
 #!/bin/bash
-# Vault Cluster Initialization Script
+# Vault Cluster Initialization Script (Secondary Cluster)
 # This script initializes the Vault cluster after Terraform deployment
 
 set -e
@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INIT_OUTPUT_FILE="${SCRIPT_DIR}/vault-init-keys.json"
 
-echo "=== Vault Cluster Initialization ==="
+echo "=== Vault Secondary Cluster Initialization ==="
 echo ""
 
 # Get VAULT_ADDR from Terraform output
@@ -121,6 +121,21 @@ if vault operator init -format=json > "$INIT_OUTPUT_FILE" 2>&1; then
     echo ""
     echo "  export VAULT_ADDR=$VAULT_ADDR"
     echo "  export VAULT_TOKEN=$ROOT_TOKEN"
+    echo ""
+
+    # Show VPC peering connection ID
+    echo "=== VPC Peering Configuration ==="
+    echo ""
+    PEERING_ID=$(terraform output -raw vpc_peering_connection_id 2>/dev/null || echo "")
+    if [ -n "$PEERING_ID" ]; then
+        echo "VPC Peering Connection ID: $PEERING_ID"
+        echo ""
+        echo "To complete VPC peering, add this to awskms-autounseal/terraform.tfvars:"
+        echo ""
+        echo "  peer_vpc_peering_connection_id = \"$PEERING_ID\""
+        echo ""
+        echo "Then run: cd ../awskms-autounseal && terraform apply"
+    fi
     echo ""
 else
     echo "ERROR: Failed to initialize Vault."

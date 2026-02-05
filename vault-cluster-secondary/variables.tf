@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "Name prefix for all resources"
   type        = string
-  default     = "vaultlab"
+  default     = "vaultlab-secondary"
 }
 
 variable "vault_version" {
@@ -37,7 +37,7 @@ variable "ami_id" {
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
-  default     = "10.0.0.0/16"
+  default     = "10.1.0.0/16"
 }
 
 variable "allowed_ssh_cidrs" {
@@ -52,15 +52,14 @@ variable "allowed_vault_cidrs" {
   default     = ["0.0.0.0/0"]
 }
 
-# Replication Lab Variables
-variable "peer_vpc_cidr" {
-  description = "CIDR block of peer cluster VPC for replication access"
+# Primary Cluster Variables (for VPC Peering)
+variable "primary_vpc_id" {
+  description = "VPC ID of the primary cluster for peering"
   type        = string
-  default     = "10.1.0.0/16"
 }
 
-variable "peer_vpc_peering_connection_id" {
-  description = "VPC peering connection ID from peer cluster (set after secondary deploys)"
+variable "primary_vpc_cidr" {
+  description = "CIDR block of primary cluster VPC for replication access"
   type        = string
-  default     = ""
+  default     = "10.0.0.0/16"
 }

@@ -70,3 +70,9 @@ output "route_table_id" {
   description = "Route table ID for VPC peering routes"
   value       = aws_route_table.public.id
 }
+
+# VPC Peering output - provide this to primary cluster
+output "vpc_peering_connection_id" {
+  description = "VPC peering connection ID - set this in primary cluster's peer_vpc_peering_connection_id variable"
+  value       = aws_vpc_peering_connection.to_primary.id
+}
