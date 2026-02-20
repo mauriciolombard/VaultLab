@@ -17,87 +17,42 @@ for part in "$${DOMAIN_PARTS[@]}"; do
   fi
 done
 
-echo "Installing OpenLDAP on Amazon Linux 2023..."
+echo "Installing OpenLDAP on Ubuntu 24.04..."
 echo "Domain: $LDAP_DOMAIN"
 echo "Base DN: $BASE_DN"
 
 # Update system
-dnf update -y
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+
+# Pre-seed slapd configuration to avoid interactive prompts
+debconf-set-selections <<EOF
+slapd slapd/internal/generated_adminpw password $LDAP_ADMIN_PASSWORD
+slapd slapd/internal/adminpw password $LDAP_ADMIN_PASSWORD
+slapd slapd/password1 password $LDAP_ADMIN_PASSWORD
+slapd slapd/password2 password $LDAP_ADMIN_PASSWORD
+slapd slapd/domain string $LDAP_DOMAIN
+slapd shared/organization string VaultLab
+slapd slapd/purge_database boolean true
+slapd slapd/move_old_database boolean true
+slapd slapd/no_configuration boolean false
+EOF
 
 # Install OpenLDAP server and utilities
-dnf install -y openldap openldap-servers openldap-clients
+apt-get install -y slapd ldap-utils
 
-# Start slapd service
-systemctl start slapd
-systemctl enable slapd
+# Reconfigure slapd with our domain settings
+dpkg-reconfigure -f noninteractive slapd
 
 # Generate password hash
 ADMIN_PASS_HASH=$(slappasswd -s "$LDAP_ADMIN_PASSWORD")
 
-# Configure the root password
-cat > /tmp/chrootpw.ldif << EOF
-dn: olcDatabase={0}config,cn=config
-changetype: modify
-add: olcRootPW
-olcRootPW: $ADMIN_PASS_HASH
-EOF
+# Import additional schemas (cosine and inetorgperson are loaded by default on Ubuntu;
+# nis needs to be added)
+ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/nis.ldif 2>/dev/null || true
 
-ldapadd -Y EXTERNAL -H ldapi:/// -f /tmp/chrootpw.ldif
-
-# Import basic schemas
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif
-
-# Find the correct MDB database number (varies by distro/version)
-MDB_DB=$(ldapsearch -Y EXTERNAL -H ldapi:/// -b 'cn=config' '(olcDatabase=*)' dn 2>/dev/null | grep 'olcDatabase=.*mdb' | sed 's/dn: //' | head -1)
-if [ -z "$MDB_DB" ]; then
-  echo "ERROR: Could not find MDB database in cn=config"
-  exit 1
-fi
-echo "Found MDB database: $MDB_DB"
-
-# Configure database
-cat > /tmp/chdomain.ldif << EOF
-dn: $MDB_DB
-changetype: modify
-replace: olcSuffix
-olcSuffix: $BASE_DN
-
-dn: $MDB_DB
-changetype: modify
-replace: olcRootDN
-olcRootDN: cn=admin,$BASE_DN
-
-dn: $MDB_DB
-changetype: modify
-add: olcRootPW
-olcRootPW: $ADMIN_PASS_HASH
-
-dn: $MDB_DB
-changetype: modify
-add: olcAccess
-olcAccess: {0}to attrs=userPassword,shadowLastChange by dn="cn=admin,$BASE_DN" write by anonymous auth by self write by * none
-olcAccess: {1}to dn.base="" by * read
-olcAccess: {2}to * by dn="cn=admin,$BASE_DN" write by * read
-EOF
-
-ldapmodify -Y EXTERNAL -H ldapi:/// -f /tmp/chdomain.ldif
-
-# Create base structure
+# Create base structure (OU for users and groups)
 cat > /tmp/basedomain.ldif << EOF
-dn: $BASE_DN
-objectClass: top
-objectClass: dcObject
-objectClass: organization
-o: VaultLab
-dc: $${DOMAIN_PARTS[0]}
-
-dn: cn=admin,$BASE_DN
-objectClass: organizationalRole
-cn: admin
-description: LDAP Administrator
-
 dn: ou=users,$BASE_DN
 objectClass: organizationalUnit
 ou: users

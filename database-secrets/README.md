@@ -88,7 +88,7 @@ To actually connect to the database with the generated credentials, SSH into the
 terraform output ssh_connection_command
 
 # SSH to the database instance
-ssh -i <db>-key.pem ec2-user@<PUBLIC_IP>
+ssh -i <db>-key.pem ubuntu@<PUBLIC_IP>
 
 # Connect using the credentials from Step 1
 # PostgreSQL:

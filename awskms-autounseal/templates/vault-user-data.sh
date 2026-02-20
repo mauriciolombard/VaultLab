@@ -15,11 +15,14 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-meta
 PRIVATE_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
 
 # Install dependencies
-dnf install -y yum-utils jq nc
+apt-get update -y
+apt-get install -y software-properties-common curl gnupg jq netcat-openbsd
 
-# Add HashiCorp repo and install Vault Enterprise
-dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-dnf install -y vault-enterprise-$${VAULT_VERSION}
+# Add HashiCorp APT repo and install Vault Enterprise
+curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list
+apt-get update -y
+apt-get install -y vault-enterprise=$${VAULT_VERSION}*
 
 # Create Vault data directory
 mkdir -p /opt/vault/data

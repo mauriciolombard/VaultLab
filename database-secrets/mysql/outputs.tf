@@ -17,7 +17,7 @@ output "mysql_connection_string" {
 
 output "ssh_connection_command" {
   description = "SSH command to connect to the MySQL server"
-  value       = "ssh -i ${path.module}/mysql-key.pem ec2-user@${aws_instance.mysql.public_ip}"
+  value       = "ssh -i ${path.module}/mysql-key.pem ubuntu@${aws_instance.mysql.public_ip}"
 }
 
 output "ssh_private_key_file" {

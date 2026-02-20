@@ -6,24 +6,23 @@ exec > >(tee /var/log/user-data.log) 2>&1
 echo "Starting MongoDB installation at $(date)"
 
 # Update system
-dnf update -y
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
 
-# Add MongoDB repository
-cat > /etc/yum.repos.d/mongodb-org-7.0.repo << 'EOF'
-[mongodb-org-7.0]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/amazon/2023/mongodb-org/7.0/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://pgp.mongodb.com/server-7.0.asc
-EOF
+# Install prerequisites
+apt-get install -y gnupg curl
+
+# Add MongoDB 7.0 APT repository
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+echo "deb [signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/7.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-7.0.list
+apt-get update -y
 
 # Install MongoDB
-dnf install -y mongodb-org
+apt-get install -y mongodb-org
 
 # Ensure MongoDB data directory has correct ownership
-chown -R mongod:mongod /var/lib/mongo
-chown -R mongod:mongod /var/log/mongodb
+chown -R mongodb:mongodb /var/lib/mongodb
+chown -R mongodb:mongodb /var/log/mongodb
 
 # Configure MongoDB
 MONGO_CONF="/etc/mongod.conf"
@@ -43,7 +42,7 @@ systemLog:
 
 # Where and how to store data
 storage:
-  dbPath: /var/lib/mongo
+  dbPath: /var/lib/mongodb
 
 # Network interfaces
 net:
@@ -66,7 +65,7 @@ systemLog:
   logAppend: true
   path: /var/log/mongodb/mongod.log
 storage:
-  dbPath: /var/lib/mongo
+  dbPath: /var/lib/mongodb
 net:
   port: 27017
   bindIp: 0.0.0.0
@@ -74,8 +73,8 @@ processManagement:
   timeZoneInfo: /usr/share/zoneinfo
 EOF
 
-# Start MongoDB without auth as mongod user
-runuser -u mongod -- mongod --config /tmp/mongod-noauth.conf --fork
+# Start MongoDB without auth as mongodb user
+runuser -u mongodb -- mongod --config /tmp/mongod-noauth.conf --fork
 
 # Wait for MongoDB to be ready
 sleep 10
@@ -109,8 +108,8 @@ db.test_data.insertMany([
 ]);
 EOF
 
-# Stop MongoDB running without auth (as mongod user)
-runuser -u mongod -- mongod --shutdown --dbpath /var/lib/mongo
+# Stop MongoDB running without auth (as mongodb user)
+runuser -u mongodb -- mongod --shutdown --dbpath /var/lib/mongodb
 
 # Wait for clean shutdown
 sleep 5

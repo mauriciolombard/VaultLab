@@ -204,7 +204,7 @@ After deployment, run `terraform output` to see:
 ## SSH Access
 
 ```bash
-ssh -i ldap-key.pem ec2-user@$(terraform output -raw ldap_server_public_ip)
+ssh -i ldap-key.pem ubuntu@$(terraform output -raw ldap_server_public_ip)
 ```
 
 ## Troubleshooting

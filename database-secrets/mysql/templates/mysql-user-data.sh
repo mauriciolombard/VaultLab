@@ -6,12 +6,13 @@ exec > >(tee /var/log/user-data.log) 2>&1
 echo "Starting MariaDB installation at $(date)"
 
 # Update system
-echo "Running dnf update..."
-dnf update -y
+export DEBIAN_FRONTEND=noninteractive
+echo "Running apt-get update..."
+apt-get update -y
 
-# Install MariaDB (MySQL-compatible, available in AL2023 repos)
+# Install MariaDB (MySQL-compatible, available in Ubuntu 24.04 repos)
 echo "Installing MariaDB..."
-if ! dnf install -y mariadb105-server mariadb105; then
+if ! apt-get install -y mariadb-server mariadb-client; then
   echo "ERROR: Failed to install MariaDB packages"
   exit 1
 fi

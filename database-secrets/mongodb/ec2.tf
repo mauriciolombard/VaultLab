@@ -1,7 +1,7 @@
 # MongoDB Server EC2 Instance
 
 resource "aws_instance" "mongodb" {
-  ami                         = data.aws_ami.amazon_linux_2023.id
+  ami                         = data.aws_ami.hc_base_ubuntu.id
   instance_type               = var.instance_type
   subnet_id                   = var.subnet_id != "" ? var.subnet_id : data.aws_subnets.available.ids[0]
   vpc_security_group_ids      = [aws_security_group.mongodb.id]
@@ -32,7 +32,7 @@ resource "null_resource" "mongodb_ready" {
 
   connection {
     type        = "ssh"
-    user        = "ec2-user"
+    user        = "ubuntu"
     private_key = tls_private_key.mongodb.private_key_pem
     host        = aws_instance.mongodb.public_ip
   }

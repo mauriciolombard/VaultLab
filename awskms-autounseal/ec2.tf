@@ -2,7 +2,7 @@
 resource "aws_instance" "vault" {
   count = 3
 
-  ami                    = var.ami_id
+  ami                    = data.aws_ami.hc_base_ubuntu.id
   instance_type          = var.instance_type
   key_name               = aws_key_pair.vault.key_name
   subnet_id              = aws_subnet.public[count.index].id

@@ -22,7 +22,7 @@ output "ldap_base_dn" {
 
 output "ssh_connection_command" {
   description = "SSH command to connect to the OpenLDAP server"
-  value       = "ssh -i ${path.module}/ldap-key.pem ec2-user@${aws_instance.openldap.public_ip}"
+  value       = "ssh -i ${path.module}/ldap-key.pem ubuntu@${aws_instance.openldap.public_ip}"
 }
 
 output "ssh_private_key_file" {

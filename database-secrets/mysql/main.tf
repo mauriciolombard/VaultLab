@@ -44,19 +44,19 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# Get latest Amazon Linux 2023 AMI
-data "aws_ami" "amazon_linux_2023" {
+# Get latest HashiCorp Base Ubuntu 24.04 AMI (from ami-prod account)
+data "aws_ami" "hc_base_ubuntu" {
   most_recent = true
-  owners      = ["amazon"]
+  owners      = ["888995627335"]
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-x86_64"]
+    values = ["hc-base-ubuntu-2404-amd64-*"]
   }
 
   filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
+    name   = "state"
+    values = ["available"]
   }
 }
 

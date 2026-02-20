@@ -17,7 +17,7 @@ output "postgresql_connection_string" {
 
 output "ssh_connection_command" {
   description = "SSH command to connect to the PostgreSQL server"
-  value       = "ssh -i ${path.module}/postgresql-key.pem ec2-user@${aws_instance.postgresql.public_ip}"
+  value       = "ssh -i ${path.module}/postgresql-key.pem ubuntu@${aws_instance.postgresql.public_ip}"
 }
 
 output "ssh_private_key_file" {

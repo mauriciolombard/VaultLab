@@ -37,7 +37,7 @@ output "ssh_connection_commands" {
   description = "SSH commands to connect to each Vault instance"
   value = {
     for i, instance in aws_instance.vault :
-    "vault${i + 1}" => "ssh -i ${local_file.private_key.filename} ec2-user@${instance.public_ip}"
+    "vault${i + 1}" => "ssh -i ${local_file.private_key.filename} ubuntu@${instance.public_ip}"
   }
 }
 

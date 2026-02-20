@@ -6,17 +6,17 @@ exec > >(tee /var/log/user-data.log) 2>&1
 echo "Starting PostgreSQL installation at $(date)"
 
 # Update system
-dnf update -y
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
 
-# Install PostgreSQL 15
-dnf install -y postgresql15-server postgresql15
+# Install PostgreSQL (Ubuntu 24.04 ships PostgreSQL 16 in its default repos)
+apt-get install -y postgresql postgresql-contrib
 
-# Initialize PostgreSQL
-postgresql-setup --initdb
-
-# Configure PostgreSQL to listen on all interfaces
-PG_HBA="/var/lib/pgsql/data/pg_hba.conf"
-PG_CONF="/var/lib/pgsql/data/postgresql.conf"
+# PostgreSQL is auto-initialized and started on Ubuntu after install
+# Config paths on Ubuntu: /etc/postgresql/<version>/main/
+PG_VERSION=$(pg_lsclusters -h | awk '{print $1}' | head -1)
+PG_HBA="/etc/postgresql/$PG_VERSION/main/pg_hba.conf"
+PG_CONF="/etc/postgresql/$PG_VERSION/main/postgresql.conf"
 
 # Backup original configs
 cp $PG_HBA $PG_HBA.bak
@@ -25,7 +25,7 @@ cp $PG_CONF $PG_CONF.bak
 # Configure PostgreSQL to listen on all interfaces
 sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PG_CONF
 
-# Configure authentication (allow md5 from any IP - for lab only)
+# Configure authentication (allow scram-sha-256 from any IP - for lab only)
 cat > $PG_HBA << 'EOF'
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 local   all             all                                     peer
@@ -35,9 +35,8 @@ host    all             all             0.0.0.0/0               scram-sha-256
 host    all             all             ::/0                    scram-sha-256
 EOF
 
-# Start and enable PostgreSQL
-systemctl enable postgresql
-systemctl start postgresql
+# Restart PostgreSQL to pick up config changes
+systemctl restart postgresql
 
 # Wait for PostgreSQL to be ready
 sleep 5

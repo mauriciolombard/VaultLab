@@ -17,7 +17,7 @@ output "mongodb_connection_string" {
 
 output "ssh_connection_command" {
   description = "SSH command to connect to the MongoDB server"
-  value       = "ssh -i ${path.module}/mongodb-key.pem ec2-user@${aws_instance.mongodb.public_ip}"
+  value       = "ssh -i ${path.module}/mongodb-key.pem ubuntu@${aws_instance.mongodb.public_ip}"
 }
 
 output "ssh_private_key_file" {
